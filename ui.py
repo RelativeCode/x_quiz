@@ -27,12 +27,12 @@ class QuizInterface:
         self.score_label.grid(row=0, column=1)
 
         true_image = PhotoImage(file="images/true.png")
-        self.true_button = Button(image=true_image, highlightthickness=0)
+        self.true_button = Button(image=true_image, highlightthickness=0, command=self.true_pressed)
         self.true_button.image = true_image  # Prevent image from being garbage collected
         self.true_button.grid(row=2, column=0)
 
         false_image = PhotoImage(file="images/false.png")
-        self.false_button = Button(image=false_image, highlightthickness=0)
+        self.false_button = Button(image=false_image, highlightthickness=0, command=self.false_pressed)
         self.false_button.image = false_image
         self.false_button.grid(row=2, column=1)
 
@@ -41,5 +41,33 @@ class QuizInterface:
         self.window.mainloop()
 
     def get_next_question(self):
+        self.canvas.config(bg="white")
         q_text = self.quiz.next_question()
         self.canvas.itemconfig(self.question_text, text=q_text)
+
+
+    def true_pressed(self):
+        is_right = self.quiz.check_answer("True")
+        self.give_feedback(is_right)
+        
+    
+
+    def false_pressed(self):
+        is_right = self.quiz.check_answer("False")
+        self.give_feedback(is_right)
+        
+    
+    def give_feedback(self, is_right):
+
+        if is_right:
+            self.canvas.config(bg="green")
+        else:
+            self.canvas.config(bg="red")
+        
+        self.window.after(1000, self.get_next_question)  # Wait for 1 second before showing the next question
+        self.score_label.config(text=f"Score: {self.quiz.score}")
+        if not self.quiz.still_has_questions():
+            self.canvas.itemconfig(self.question_text, text="You've completed the quiz!")
+            self.true_button.config(state="disabled")
+            self.false_button.config(state="disabled")
+            self.score_label.config(text=f"Final Score: {self.quiz.score}/{self.quiz.question_number}")
