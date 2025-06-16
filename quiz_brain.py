@@ -25,3 +25,8 @@ class QuizBrain:
         else:
             return False
 
+
+    def reset(self):
+        self.question_number = 0
+        self.score = 0
+
