@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter import messagebox
 from quiz_brain import QuizBrain
 from PIL import Image, ImageTk
+import json
+import os
 
 THEME_COLOR = "#0066cc"
 
@@ -76,6 +78,39 @@ class QuizInterface:
         )
         self.score_label.grid(row=0, column=0, sticky="w", padx=20, pady=10)
 
+        self.scoreboard_frame = Frame(self.window, bg=THEME_COLOR)
+
+        self.scoreboard_label = Label(
+            self.scoreboard_frame,
+            text="Scoreboard",
+            font=("Arial", 24, "bold"),
+            bg=THEME_COLOR,
+            fg="white"
+        )
+        self.scoreboard_label.pack(pady=(20, 10))
+
+        self.scoreboard_text = Text(
+            self.scoreboard_frame,
+            width=50,
+            height=15,
+            bg="white",
+            fg="black",
+            font=("Arial", 12)
+        )
+        self.scoreboard_text.pack(pady=(0, 20))
+
+        self.back_button = Button(
+            self.scoreboard_frame,
+            text="Back to Start",
+            command=self.back_to_start,
+            width=20,
+            bg="black",
+            fg=THEME_COLOR,
+            font=("Arial", 12, "bold")
+        )
+        self.back_button.pack()
+
+        self.scoreboard_frame.pack_forget()
 
         # Play Again and View Scoreboard buttons (hidden initially)
         self.play_again_button = Button(
@@ -205,6 +240,7 @@ class QuizInterface:
         self.score_label.config(text=f"Score: {self.quiz.score}")
         if not self.quiz.still_has_questions():
             self.canvas.itemconfig(self.question_text, text="You've completed the quiz!")
+            self.save_score()
             self.true_button.grid_forget()
             self.false_button.grid_forget()
 
@@ -227,22 +263,58 @@ class QuizInterface:
 
 
 
-
-
-
     def show_scoreboard(self):
-        print("Scoreboard feature not yet implemented.")
-        self.scoreboard_button = Button(
-        text="Scoreboard", 
-        command=self.show_scoreboard,
-        width=15, 
-        bg=THEME_COLOR,
-        fg="black",
-        font=("Arial", 12, "bold"),
-        relief="raised",
-        bd=2
-)
-    
+        self.start_frame.pack_forget()
+        self.quiz_frame.pack_forget()
+        self.scoreboard_frame.pack(expand=True)
+
+        # Clear previous widgets except for title and back button
+        for widget in self.scoreboard_frame.winfo_children():
+            if widget not in [self.scoreboard_label, self.back_button]:
+                widget.destroy()
+
+        # Create inner white frame
+        scores_frame = Frame(self.scoreboard_frame, bg="white", width=500, height=300)
+        scores_frame.pack(pady=20)
+
+        # Load scores
+        file_path = "scoreboard.json"
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                scores = json.load(f)
+        else:
+            scores = []
+
+        if not scores:
+            no_score = Label(
+                scores_frame,
+                text="No scores yet.",
+                font=("Arial", 16, "bold"),
+                bg="white",
+                fg="black"
+            )
+            no_score.pack(pady=10)
+        else:
+            scores = sorted(scores, key=lambda x: x["score"], reverse=True)[:10]
+            emojis = ["🥇", "🥈", "🥉"] + ["🎖️"] * 7
+
+            for index, entry in enumerate(scores):
+                name = entry["name"]
+                score = entry["score"]
+                display_text = f"{emojis[index]}  {name}: {score}"
+                score_label = Label(
+                    scores_frame,
+                    text=display_text,
+                    font=("Arial", 16, "bold"),
+                    bg="white",
+                    fg="black"
+                )
+                score_label.pack(anchor="w", padx=20, pady=4)
+
+        # Show back button at the end
+        self.back_button.pack(pady=10)
+
+
     def play_again(self):
         # Create a new quiz with fresh questions
         self.quiz = self.create_quiz_func()
@@ -282,3 +354,29 @@ class QuizInterface:
         self.canvas.config(bg="red")
         self.score_label.config(text=f"Score: {self.quiz.score}")
         self.window.after(1000, self.get_next_question)
+    
+
+    def save_score(self):
+        score_record = {
+            "name": self.player_name,
+            "score": f"{self.quiz.score}/{self.quiz.question_number}"
+        }
+
+        file_path = "scoreboard.json"
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                scores = json.load(f)
+        else:
+            scores = []
+
+        scores.append(score_record)
+
+        with open(file_path, "w") as f:
+            json.dump(scores, f, indent=4)
+    
+
+    def back_to_start(self):
+        self.scoreboard_frame.pack_forget()
+        self.start_frame.pack(expand=True)
+
+

@@ -5,7 +5,7 @@ from ui import QuizInterface
 
 # Factory function to create a fresh QuizBrain with new questions
 def create_quiz():
-    question_data = fetch_new_questions()  # 🔄 get fresh questions
+    question_data = fetch_new_questions()  
     question_bank = []
     for question in question_data:
         question_text = question["question"]
